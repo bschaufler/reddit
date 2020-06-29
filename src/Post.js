@@ -1,10 +1,36 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import CommentsIcon from './mode_comment - material.svg';
+import Comment from './Comment';
+import { formatScore, createDataTree, findAndDelete} from './utilities'
 
-const App = () => {
-  const title = 'Taking Showers with your socks is so much better than not';
-  const count = '20.7k'
-  const caption = 'r/unpopularopinion'
-  const post = 'I almost always shower with my socks on. It just feels more relaxing, I don’t really like the feeling of water below my feet. Having socks on, even light ones, feels like a nice towel to put around my feet when I’m showering. It’s just better this way. I’ve done this since I was like, 8, and I don’t ever plan on changing it. When I told my friends about it they all said it was really weird. I just think it is more comfortable, relaxing, and overall a better experience.\n\nEdit: jeez I really didn’t think that this was a big deal.\n\nEdit 2: To address some things:Yes, I actually do this, I personally like it, and it really isn’t problematic so I do it. My feet aren’t always super clean but I rub lotion on them occasionally.\n\nEdit 3: well I went to sleep, and now I have 953 notifications.'
+const Post = () => {
+  const [comments, setComments] = useState([]);
+  const [commentTree, setCommentTree] = useState([])
+  const [data, setData] = useState({});
+  const url = 'https://gist.githubusercontent.com/mkg0/6a4dca9067ad7a296204e7c9ecd977b0/raw/0b1ec16580ea1e970a73f5c85563c22631be7ad7/unpopularopinion-dataset.json';
+
+
+  useEffect(() => {
+    fetch(url)
+      .then(results => results.json())
+      .then(data => {
+        setData(data);
+        setComments(data.comments)
+        setCommentTree(createDataTree(data.comments));
+      });
+  }, []);
+
+  const title = data.title;
+  const caption = data.subreddit_name_prefixed
+  const post = data.selftext
+  const score = formatScore(data.score);
+  const commentCount = comments.length + ' Comments';
+
+  const deleteComment = (id) => {
+    const result = findAndDelete(commentTree, id)
+    setCommentTree(result);
+
+  }
   return (
     <div className="page">
       <div className="spacer-headline"></div>
@@ -13,7 +39,7 @@ const App = () => {
       </div>
       <div className="spacer-headline"></div>
       <div className="headline-count">
-        <div>{count}</div>
+        <div>{score.toString()}</div>
       </div>
       <div className="headline">
         <div>{title}</div>
@@ -21,14 +47,25 @@ const App = () => {
       <div className="spacer"></div>
       <div className="post-container">
         <div className="post-content">
-          <div> 
+          <div className="post-content-text">
             {post}
+          </div>
+          <div className="post-comment-icon-container">
+            <img className="post-comment-icon" src={CommentsIcon} alt="comments icon" />
+            <div className="post-comment-text">{commentCount}</div>
           </div>
         </div>
       </div>
       <div className="spacer"></div>
+      <div className="spacer-headline"></div>
+      <div className="comments-container">
+        {commentTree.map((comment, index) => (
+          <Comment key={index} {...comment} deleteComment={deleteComment} />
+        ))}
+      </div>
+      <div className="spacer-headline"></div>
     </div>
   );
 }
 
-export default App;
+export default Post;
